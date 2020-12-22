@@ -3,7 +3,7 @@
 /**
  * Migration action caller
  * @package iqomp/config
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 namespace Iqomp\Migrate;
@@ -61,65 +61,63 @@ class Migrator
 
     protected static function mergeMigrationConfig(): void
     {
-        $reflection    = new \ReflectionClass(ClassLoader::class);
-        $projectRoot   = dirname($reflection->getFileName(), 3);
-        $vendorDir     = $projectRoot . '/vendor';
-        $composerDir   = $vendorDir   . '/composer';
-        $installedFile = $composerDir . '/installed.json';
+        $vendor_dir     = Plugin::getVendorDir();
+        $composer_dir   = $vendor_dir . '/composer';
+        $installed_file = $composer_dir . '/installed.json';
 
-        if (!is_file($installedFile)) {
+        if (!is_file($installed_file)) {
             return;
         }
 
-        $installedJson = file_get_contents($installedFile);
-        $installed     = json_decode($installedJson);
-        $packages      = $installed->packages;
+        $installed_json = file_get_contents($installed_file);
+        $installed      = json_decode($installed_json);
+        $packages       = $installed->packages;
 
         // app composer.json file
-        $appComposerFile = \Composer\Factory::getComposerFile();
-        if (is_file($appComposerFile)) {
-            $appComposer = file_get_contents($appComposerFile);
-            $appComposer = json_decode($appComposer);
-            $appComposer->{'install-path'} = dirname($appComposerFile);
-            $packages[] = $appComposer;
+        $app_composer_file = \Composer\Factory::getComposerFile();
+        if (is_file($app_composer_file)) {
+            $app_composer = file_get_contents($app_composer_file);
+            $app_composer = json_decode($app_composer);
+            $app_composer->{'install-path'} = dirname($app_composer_file);
+            $packages[] = $app_composer;
         }
 
         $result = [];
 
         // get all modules and app migrate file
         foreach ($packages as $package) {
-            $migrateFile = $package->extra->{'iqomp/migrate'} ?? null;
-            if (!$migrateFile) {
+            $migrate_file = $package->extra->{'iqomp/migrate'} ?? null;
+            if (!$migrate_file) {
                 continue;
             }
 
-            $installPath = $package->{'install-path'};
+            $install_path = $package->{'install-path'};
 
-            $migrateFilePath  = realpath(implode('/', [
-                $composerDir,
-                $installPath,
-                $migrateFile
+            $migrate_file_path  = realpath(implode('/', [
+                $composer_dir,
+                $install_path,
+                $migrate_file
             ]));
 
-            if (!$migrateFilePath) {
-                $migrateFilePath = realpath(implode('/', [
-                    $installPath,
-                    $migrateFile
+            if (!$migrate_file_path) {
+                $migrate_file_path = realpath(implode('/', [
+                    $install_path,
+                    $migrate_file
                 ]));
             }
 
-            if (!$migrateFilePath || !is_file($migrateFilePath)) {
+            if (!$migrate_file_path || !is_file($migrate_file_path)) {
                 continue;
             }
 
-            $migrateContent = include $migrateFilePath;
-            $result = array_replace_recursive($result, $migrateContent);
+            $migrate_content = include $migrate_file_path;
+            $result = array_replace_recursive($result, $migrate_content);
         }
 
         if (self::$externals) {
             foreach (self::$externals as $file) {
-                $migrateContent = include $file;
-                $result = array_replace_recursive($result, $migrateContent);
+                $migrate_content = include $file;
+                $result = array_replace_recursive($result, $migrate_content);
             }
         }
 
@@ -203,6 +201,11 @@ class Migrator
 
     public static function init(): void
     {
+        // some class is not automatically loaded
+        // we'll need to call it manually
+        $vendor_dir = Plugin::getVendorDir();
+        require_once $vendor_dir . '/autoload.php';
+
         self::mergeMigrationConfig();
         self::pupolateConnections();
         self::populateModels();
@@ -262,7 +265,7 @@ class Migrator
         if ($err) {
             $out->writeln($err);
         } else {
-            $out->writeln('All model database already created');
+            $out->writeln('<info>All models database(s) already created</info>');
         }
     }
 

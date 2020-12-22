@@ -15,8 +15,11 @@ use Composer\Plugin\Capable;
 
 class Plugin implements PluginInterface, Capable
 {
+    protected static $vendor_dir = '.';
+
     public function activate(Composer $composer, IOInterface $io)
     {
+        self::$vendor_dir = $composer->getConfig()->get('vendor-dir');
     }
 
     public function deactivate(Composer $composer, IOInterface $io)
@@ -32,5 +35,15 @@ class Plugin implements PluginInterface, Capable
         return [
             'Composer\\Plugin\\Capability\\CommandProvider' => 'Iqomp\\Migrate\\CommandProvider'
         ];
+    }
+
+    public static function getVendorDir(): string
+    {
+        return self::$vendor_dir;
+    }
+
+    public static function setVendorDir(string $dir): void
+    {
+        self::$vendor_dir = $dir;
     }
 }

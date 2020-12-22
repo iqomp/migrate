@@ -4,6 +4,7 @@ namespace Iqomp\Migrate\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Iqomp\Migrate\Migrator;
+use Iqomp\Migrate\Plugin;
 use Iqomp\Config\Fetcher as Config;
 
 use Symfony\Component\Console\Input\ArgvInput as Input;
@@ -14,6 +15,7 @@ class MigratorTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         Migrator::addMigrateFile(__DIR__ . '/config/migrator.php');
+        Plugin::setVendorDir(dirname(__DIR__) . '/vendor');
     }
 
     public function testCreateDbExists()
@@ -43,7 +45,7 @@ class MigratorTest extends TestCase
         $out = new Output();
         Migrator::db($in, $out);
 
-        $this->assertEquals('All model database already created', $out->getLastOutput());
+        $this->assertEquals('<info>All models database(s) already created</info>', $out->getLastOutput());
     }
 
     public function testCreateDbNoConnections()
@@ -63,7 +65,7 @@ class MigratorTest extends TestCase
         $out = new Output();
         Migrator::db($in, $out);
 
-        $this->assertEquals('All model database already created', $out->getLastOutput());
+        $this->assertEquals('<info>All models database(s) already created</info>', $out->getLastOutput());
     }
 
     public function testCreateDbFailCreateDb()

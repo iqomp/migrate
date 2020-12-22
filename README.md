@@ -12,6 +12,12 @@ migration before execution. For example, module `post` already define structure
 for table `post`, another module ( ex: `post-publish` ) allowed to add column
 for table `post` on `post-publish` migration config.
 
+## Installation
+
+```bash
+composer require iqomp/migrate
+```
+
 ## Command Line
 
 This module create new composer command which can be used to test, create db,
