@@ -259,51 +259,10 @@ class MigratorTest extends TestCase
         ]);
         Migrator::init();
 
-        $dir  = __DIR__ . '/to';
-        $file = $dir . '/m.txt';
-        $in   = new Input();
-        $out  = new Output();
+        $in = new Input();
+        $out = new Output();
+        Migrator::to($in, $out);
 
-        Migrator::to($in, $out, $file);
-
-        $this->assertEquals($file, $out->getLastOutput());
-
-        if (is_dir($dir)) {
-            `rm -Rf $dir`;
-        }
-    }
-
-    public function testCreateSyncToCreateDir()
-    {
-        Config::fetchConfig();
-        Config::addConfig([
-            'database' => [
-                'migrators' => [
-                    'mock' => 'Iqomp\\Migrate\\Tests\\Migrator\\Mock'
-                ],
-                'connections' => [
-                    'default' => [
-                        'driver' => 'mock',
-                        'type' => 'mock',
-                        'configs' => [
-                            'main' => []
-                        ]
-                    ]
-                ]
-            ]
-        ]);
-        Migrator::init();
-
-        $dir  = __DIR__ . '/to';
-        $file = $dir . '/one/two/m.txt';
-        $in   = new Input();
-        $out  = new Output();
-        Migrator::to($in, $out, $file);
-
-        $this->assertTrue(file_exists(dirname($file)));
-
-        if (is_dir($dir)) {
-            `rm -Rf $dir`;
-        }
+        $this->assertEquals('syncTableTo', $out->getLastOutput());
     }
 }

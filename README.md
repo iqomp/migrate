@@ -20,8 +20,9 @@ composer require iqomp/migrate
 
 ## Command Line
 
-This module create new composer command which can be used to test, create db,
-sync table and config, and create sql/script file for manual migration.
+This module create new composer command that can be used to test, create db,
+sync table and config, and print out sql/script for manual execution by
+developer.
 
 ```bash
 # Create database defined on iqomp/config/database->connections
@@ -34,9 +35,9 @@ composer migrate start
 # Compare migration config and database without executing the migration
 composer migrate test
 
-# Compser migration config and database without executing the migration
-# and create migration file for manual execution by developer.
-composer migrate to ./migrate.sql
+# Compare migration config and database without executing the migration
+# and print it to STD_OUT for manual execution by developer.
+composer migrate to > ./migrate.sql
 ```
 
 ## Migration Config
@@ -256,11 +257,11 @@ Return last error accured.
 
 Sync migration config to database table.
 
-### public syncTableTo(string $model, string $table, array $config, string $file): void
+### public syncTableTo(string $model, string $table, array $config): void
 
-Sync migration config to database and create script/sql file for the migration
-instead of executing it to the database. This action means to be executed
-manually by developer.
+Sync migration config to database and create print out script/sql for the
+migration instead of executing it to the database. This action means to be
+executed manually by developer.
 
 ### public testTable(string $model, string $table, array $config): void
 

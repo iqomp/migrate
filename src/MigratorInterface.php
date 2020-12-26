@@ -3,7 +3,7 @@
 /**
  * Migrator interface
  * @package iqomp/migrate
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 namespace Iqomp\Migrate;
@@ -53,10 +53,9 @@ interface MigratorInterface
      * @param string $model Model name
      * @param string $table Table name
      * @param array $config Migration config
-     * @param string $file Target script file.
      * @return void
      */
-    public function syncTableTo(string $model, string $table, array $config, string $file): void;
+    public function syncTableTo(string $model, string $table, array $config): void;
 
     /**
      * Test migrate config to file without executing the migration. This action

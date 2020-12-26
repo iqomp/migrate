@@ -3,7 +3,7 @@
 /**
  * Migration action caller
  * @package iqomp/config
- * @version 1.0.1
+ * @version 2.0.0
  */
 
 namespace Iqomp\Migrate;
@@ -279,24 +279,8 @@ class Migrator
         self::execute($in, $out, 'testTable');
     }
 
-    public static function to(In $in, Out $out, string $file): void
+    public static function to(In $in, Out $out): void
     {
-        $dirname = dirname($file);
-        if (!is_dir($dirname)) {
-            $dirs = explode('/', $dirname);
-            $current_dir = '';
-            foreach ($dirs as $dir) {
-                $current_dir .= '/' . $dir;
-                if (!is_dir($current_dir)) {
-                    mkdir($current_dir);
-                }
-            }
-        }
-
-        if (is_file($file)) {
-            unlink($file);
-        }
-
-        self::execute($in, $out, 'syncTableTo', $file);
+        self::execute($in, $out, 'syncTableTo');
     }
 }

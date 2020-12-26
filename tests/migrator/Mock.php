@@ -39,9 +39,9 @@ class Mock implements MigratorInterface
         $this->out->writeln('syncTable');
     }
 
-    public function syncTableTo(string $model, string $table, array $config, string $file): void
+    public function syncTableTo(string $model, string $table, array $config): void
     {
-        $this->out->writeln($file);
+        $this->out->writeln('syncTableTo');
     }
 
     public function testTable(string $model, string $table, array $config): void
