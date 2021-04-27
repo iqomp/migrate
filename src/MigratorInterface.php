@@ -3,23 +3,21 @@
 /**
  * Migrator interface
  * @package iqomp/migrate
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 namespace Iqomp\Migrate;
 
-use Symfony\Component\Console\Input\InputInterface as In;
-use Symfony\Component\Console\Output\OutputInterface as Out;
+use Hyperf\Command\Command as HyperfCommand;
 
 interface MigratorInterface
 {
     /**
      * Construct migrator
-     * @param InputInterface $in Command line input object
-     * @param OutputInterface $out Command line output object
+     * @param HyperfCommand $cli Command line object
      * @param array $config Database connection config
      */
-    public function __construct(In $in, Out $out, array $config);
+    public function __construct(HyperfCommand $cli, array $config);
 
     /**
      * Create the database

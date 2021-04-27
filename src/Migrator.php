@@ -2,27 +2,26 @@
 
 /**
  * Migration action caller
- * @package iqomp/config
- * @version 2.0.0
+ * @package iqomp/migrate
+ * @version 3.0.0
  */
 
 namespace Iqomp\Migrate;
 
-use Symfony\Component\Console\Input\InputInterface as In;
-use Symfony\Component\Console\Output\OutputInterface as Out;
-use Composer\Autoload\ClassLoader;
-use Iqomp\Config\Fetcher as Config;
+use Hyperf\Command\Command as HyperfCommand;
 
 class Migrator
 {
+    protected static $cli;
+
     protected static $migrations = [];
     protected static $connections = [];
     protected static $models = [];
     protected static $externals = [];
 
-    protected static function execute(In $in, Out $out, string $method, $options = null)
+    protected static function execute(string $method, $options = null)
     {
-        $migrators = Config::get('database', 'migrators');
+        $migrators = config('model.migrators');
         $connections = [];
 
         foreach (self::$models as $model => $conns) {
@@ -31,9 +30,9 @@ class Migrator
             }
 
             $conn = $conns['write_conns'];
-            $type = $conn['type'];
+            $driver = $conn['driver'];
 
-            if (!isset($migrators[$type])) {
+            if (!isset($migrators[$driver])) {
                 continue;
             }
 
@@ -42,12 +41,8 @@ class Migrator
             if (!isset($connections[$conn_name])) {
                 $connections[$conn_name] = [];
 
-                $migrator  = $migrators[$type];
-                $configs   = $conn['configs'];
-
-                foreach ($configs as $config) {
-                    $connections[$conn_name][] = new $migrator($in, $out, $config);
-                }
+                $migrator  = $migrators[$driver];
+                $connections[$conn_name][] = new $migrator(self::$cli, $conn);
             }
 
             $table = $model::$table;
@@ -61,7 +56,7 @@ class Migrator
 
     protected static function mergeMigrationConfig(): void
     {
-        $vendor_dir     = Plugin::getVendorDir();
+        $vendor_dir     = BASE_PATH . '/vendor';
         $composer_dir   = $vendor_dir . '/composer';
         $installed_file = $composer_dir . '/installed.json';
 
@@ -74,7 +69,7 @@ class Migrator
         $packages       = $installed->packages;
 
         // app composer.json file
-        $app_composer_file = \Composer\Factory::getComposerFile();
+        $app_composer_file = BASE_PATH . '/composer.json';
         if (is_file($app_composer_file)) {
             $app_composer = file_get_contents($app_composer_file);
             $app_composer = json_decode($app_composer);
@@ -86,7 +81,7 @@ class Migrator
 
         // get all modules and app migrate file
         foreach ($packages as $package) {
-            $migrate_file = $package->extra->{'iqomp/migrate'} ?? null;
+            $migrate_file = $package->extra->iqomp->migrate ?? null;
             if (!$migrate_file) {
                 continue;
             }
@@ -126,7 +121,7 @@ class Migrator
 
     protected static function pupolateConnections(): void
     {
-        $connections = Config::get('database', 'connections');
+        $connections = config('databases');
         foreach ($connections as $name => &$conn) {
             $conn['name'] = $name;
         }
@@ -139,7 +134,7 @@ class Migrator
     {
         $models = array_keys(self::$migrations);
 
-        $conn_models = Config::get('database', 'models');
+        $conn_models = config('model.models');
         $model_conns = [];
         foreach ($conn_models as $name => $conn) {
             $regex = preg_quote($name);
@@ -199,13 +194,9 @@ class Migrator
         self::$models = $model_conns;
     }
 
-    public static function init(): void
+    public static function init(HyperfCommand $cli): void
     {
-        // some class is not automatically loaded
-        // we'll need to call it manually
-        $vendor_dir = Plugin::getVendorDir();
-        require_once $vendor_dir . '/autoload.php';
-
+        self::$cli = $cli;
         self::mergeMigrationConfig();
         self::pupolateConnections();
         self::populateModels();
@@ -218,9 +209,9 @@ class Migrator
         }
     }
 
-    public static function db(In $in, Out $out): void
+    public static function db(): void
     {
-        $migrators = Config::get('database', 'migrators');
+        $migrators = config('model.migrators');
 
         $check_conns = [];
         foreach (self::$models as $model => $conns) {
@@ -238,18 +229,14 @@ class Migrator
 
         $obj_conns = [];
         foreach ($check_conns as $name => $conn) {
-            $type = $conn['type'];
+            $driver = $conn['driver'];
 
-            if (!isset($migrators[$type])) {
+            if (!isset($migrators[$driver])) {
                 continue;
             }
 
-            $migrator = $migrators[$type];
-            $configs  = $conn['configs'];
-
-            foreach ($configs as $config) {
-                $obj_conns[] = new $migrator($in, $out, $config);
-            }
+            $migrator = $migrators[$driver];
+            $obj_conns[] = new $migrator(self::$cli, $conn);
         }
 
         $err = null;
@@ -263,24 +250,24 @@ class Migrator
         }
 
         if ($err) {
-            $out->writeln($err);
+            self::$cli->error($err);
         } else {
-            $out->writeln('<info>All models database(s) already created</info>');
+            self::$cli->info('All models database(s) already created');
         }
     }
 
-    public static function start(In $in, Out $out): void
+    public static function start(): void
     {
-        self::execute($in, $out, 'syncTable');
+        self::execute('syncTable');
     }
 
-    public static function test(In $in, Out $out): void
+    public static function test(): void
     {
-        self::execute($in, $out, 'testTable');
+        self::execute('testTable');
     }
 
-    public static function to(In $in, Out $out): void
+    public static function to(): void
     {
-        self::execute($in, $out, 'syncTableTo');
+        self::execute('syncTableTo');
     }
 }

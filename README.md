@@ -20,24 +20,24 @@ composer require iqomp/migrate
 
 ## Command Line
 
-This module create new composer command that can be used to test, create db,
+This module create new hyperf command that can be used to test, create db,
 sync table and config, and print out sql/script for manual execution by
 developer.
 
 ```bash
-# Create database defined on iqomp/config/database->connections
+# Create database defined on config/autoload/databases.php
 # if the database is not yet there.
-composer migrate db
+php bin/hyperf.php iqomp:migrate db
 
 # Start migrating for migrate config to database table.
-composer migrate start
+php bin/hyperf.php iqomp:migrate start
 
 # Compare migration config and database without executing the migration
-composer migrate test
+php bin/hyperf.php iqomp:migrate test
 
 # Compare migration config and database without executing the migration
 # and print it to STD_OUT for manual execution by developer.
-composer migrate to > ./migrate.sql
+php bin/hyperf.php iqomp:migrate to > ./migrate.sql
 ```
 
 ## Migration Config
@@ -47,7 +47,9 @@ Update your `composer.json` file to include content as below:
 ```json
 {
     "extra": {
-        "iqomp/migrate": "iqomp/migrate/config.php"
+        "iqomp": {
+            "migrate": "iqomp/migrate/config.php"
+        }
     }
 }
 ```
@@ -230,16 +232,10 @@ This part explain how to create new migration handler for some database type.
 Create new class that implements interface `Iqomp\Migrate\MigratorInterface`. The
 class should has below methods:
 
-### public __construct(In $in, Out $out, array $config)
+### public __construct(\Hyperf\Command\Command $cli, array $config)
 
-Construct he class, this method accept arguments command in, command out, and
-database connection config. The `$in` and `$out` arguments is interfaces as of
-below:
-
-```php
-use Symfony\Component\Console\Input\InputInterface as In;
-use Symfony\Component\Console\Output\OutputInterface as Out;
-```
+Construct he class, this method accept arguments command cli database connection
+config.
 
 ### public createDb(): bool
 
@@ -271,19 +267,23 @@ without executing the migration.
 Please check [iqomp/migrate-mysql](https://github.com/iqomp/migrate-mysql) for
 migration example.
 
-After creating the migrator class, register the handler by creating new global
-[iqomp/config](https://github.com/iqomp/config) file named
-`iqomp/config/database.php`. Fill the file with content as below:
+After creating the migrator class, register the handler by creating class
+`ConfigProvider` on your module to return data as below on class invoke method:
 
 ```php
-<?php
-
-return [
-    'migrators' => [
-        '/db-type/' => 'ClassHandler',
-        'mysql' => 'Iqomp\\MigrateMysql\\Migrator'
-    ]
-];
+// ...
+    public function __invoke()
+    {
+        return [
+            'model' => [
+                'migrators' => [
+                    '/db-type/' => 'ClassHandler',
+                    'mysql' => 'Vendor\\Module\\Migrator'
+                ]
+            ]
+        ];
+    }
+// ...
 ```
 
 Then update your `composer.json` file to include content as below:
@@ -291,9 +291,9 @@ Then update your `composer.json` file to include content as below:
 ```json
 {
     "extra": {
-        "iqomp/config": "iqomp/config/"
+        "hyperf": {
+            "config": "Vendor\\Module\\ConfigProvider"
+        }
     }
 }
 ```
-
-Make sure to call `composer update` for the config to take effect.

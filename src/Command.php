@@ -3,23 +3,34 @@
 /**
  * Command executor
  * @package iqomp/migrate
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 namespace Iqomp\Migrate;
 
+use Hyperf\Command\Command as HyperfCommand;
+use Hyperf\Contract\ConfigInterface;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
-use Composer\Command\BaseCommand;
 
-class Command extends BaseCommand
+/**
+ * @Command
+ */
+class Command extends HyperfCommand
 {
+    /**
+     * @var ContainerInterface
+     */
+    private $container;
+
+    /**
+     * @var ConfigInterface
+     */
+    private $config;
+
     protected function configure()
     {
-        $this->setName('migrate')
-            ->setDescription('Run the migration from config to db or file')
+        $this->setDescription('Run the migration from config to db or file')
             ->addArgument(
                 'action',
                 InputArgument::REQUIRED,
@@ -27,18 +38,24 @@ class Command extends BaseCommand
             );
     }
 
-    protected function execute(InputInterface $in, OutputInterface $out)
+    public function handle()
     {
-        $action = $in->getArgument('action');
+        $action = $this->input->getArgument('action');
 
         if (!in_array($action, ['db', 'start', 'test', 'to'])) {
             $msg = 'Unknown action. Use action ( db | start | test | to )';
-            $io = new SymfonyStyle($in, $out);
-            $io->error($msg);
-            return;
+
+            return $this->error($msg);
         }
 
-        Migrator::init();
-        call_user_func([Migrator::class, $action], $in, $out);
+        Migrator::init($this);
+        Migrator::$action();
+    }
+
+    public function __construct(ContainerInterface $container, ConfigInterface $config)
+    {
+        parent::__construct('iqomp:migrate');
+        $this->container = $container;
+        $this->config = $config;
     }
 }
