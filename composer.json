@@ -3,7 +3,7 @@
     "description": "Database migration that sync migrate config to database table",
     "type": "library",
     "license": "MIT",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "authors": [
         {
             "name": "Iqbal Fauzi",
